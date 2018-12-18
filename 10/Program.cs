@@ -35,11 +35,10 @@ namespace _10
             int step = 0;
             while (!sky.IsAligned())
             {
-                Console.WriteLine("Testing step " + step);
+                sky.PrintSky();
                 sky.StepForward();
                 step++;
             }
-
             sky.PrintSky();
         }
 
@@ -79,18 +78,9 @@ namespace _10
 
             bool HasNeighbors(Light light)
             {
-                Point[] offsets = 
+                foreach (var other in lights)
                 {
-                    new Point(1,0),
-                    new Point(-1,0),
-                    new Point(0,1),
-                    new Point(0,-1),
-                };
-
-                foreach (var offset in offsets)
-                {
-                    Point neighbor = light.Position + offset;
-                    if (points.Contains(neighbor))
+                    if (other.Position.X == light.Position.X || other.Position.Y == light.Position.Y)
                     {
                         return true;
                     }
@@ -110,11 +100,18 @@ namespace _10
                     lights.Max(l => l.Position.Y)
                 );
 
-                for (int y = min.Y; y <= max.Y; y++)
+                Point newMin = Point.Empty;
+                Point newMax = new Point(10, 10);
+
+                var normalized = points
+                    .Select(p => p.Scale(min, max, newMin, newMax));
+                var lookup = new HashSet<Point>(normalized);
+
+                for (int y = newMin.Y; y <= newMax.Y; y++)
                 {
-                    for (int x = min.X; x <= max.X; x++)
+                    for (int x = newMin.X; x <= newMax.X; x++)
                     {
-                        if (points.Contains(new Point(x, y)))
+                        if (lookup.Contains(new Point(x, y)))
                         {
                             Console.Write("#");
                         }
@@ -197,6 +194,11 @@ namespace _10
             }
         }
 
+        static float ScaleNum(float value, float min1, float max1, float min2, float max2)
+        {
+            return (((value - min1) * (max2 - min2)) / (max2 - min1)) + min2;
+        }
+
         public struct Point
         {
             public static Point Empty = new Point(0, 0);
@@ -208,6 +210,14 @@ namespace _10
             {
                 X = x;
                 Y = y;
+            }
+
+            public Point Scale(Point min1, Point max1, Point min2, Point max2)
+            {
+                return new Point(
+                    (int)Math.Floor(ScaleNum(X, min1.X, max1.X, min2.X, max2.X)),
+                    (int)Math.Floor(ScaleNum(Y, min1.Y, max1.Y, min2.Y, max2.Y))
+                );
             }
 
             public static Point operator +(Point a, Point b)
